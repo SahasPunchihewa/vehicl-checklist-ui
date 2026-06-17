@@ -66,11 +66,11 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-4xl font-bold text-gray-900">Vehicle Picker</h1>
-          <p className="text-gray-600 mt-2">Scrape and manage vehicle listings</p>
+    <div className="min-h-screen bg-background">
+      <header className="bg-card-bg border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <h1 className="text-5xl font-bold text-foreground">Vehicle Picker</h1>
+          <p className="text-text-secondary mt-3 text-lg">Scrape and manage vehicle listings</p>
         </div>
       </header>
 
@@ -78,13 +78,13 @@ export default function Home() {
         <Scraper onSuccess={handleScraperSuccess} />
 
         {error && (
-          <div className="mb-8 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+          <div className="mb-8 p-4 bg-red-950 border border-red-700 text-red-200 rounded-lg">
             {error}
           </div>
         )}
 
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4">Filter Vehicles</h2>
+        <div className="mb-12">
+          <h2 className="text-3xl font-bold mb-6 text-foreground">Filter Vehicles</h2>
           <StatusFilter
             statuses={statuses}
             selected={selectedStatus}
@@ -93,7 +93,7 @@ export default function Home() {
         </div>
 
         <div>
-          <h2 className="text-2xl font-bold mb-6">
+          <h2 className="text-3xl font-bold mb-8 text-foreground">
             Vehicles {selectedStatus !== 'all' && `(${selectedStatus})`}
           </h2>
           <VehicleList
