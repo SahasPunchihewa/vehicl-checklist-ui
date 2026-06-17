@@ -18,6 +18,11 @@ export interface Vehicle {
   scraped_at?: string;
   created_at?: string;
   updated_at?: string;
+  // Manually entered fields
+  interior_color?: string;
+  multifunction_steering?: boolean;
+  notes?: string;
+  manual_phones?: string[];
 }
 
 export interface ApiResponse<T> {
@@ -113,6 +118,27 @@ export async function updateVehicleActiveStatus(
   return data.vehicle;
 }
 
+export async function updateVehicle(
+  id: string,
+  fields: Partial<Vehicle>
+): Promise<Vehicle> {
+  const response = await fetch(`${API_URL}/vehicles/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(fields),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update vehicle');
+  }
+
+  const data: any = await response.json();
+  return data.vehicle;
+}
+
 export async function deleteVehicle(id: string): Promise<void> {
   const response = await fetch(`${API_URL}/vehicles/${id}`, {
     method: 'DELETE',
@@ -146,3 +172,9 @@ export async function getVehiclesByStatus(status: string): Promise<Vehicle[]> {
   return data.vehicles || [];
 }
 
+export function formatPrice(price?: string): string {
+  if (!price) return 'Price N/A';
+  const num = Number(price.replace(/,/g, ''));
+  if (isNaN(num) || num < 10000) return price; // don't format if it looks wrong
+  return `Rs ${num.toLocaleString('en-LK')}`;
+}

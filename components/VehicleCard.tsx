@@ -1,6 +1,6 @@
 'use client';
 
-import { Vehicle } from '@/lib/api';
+import { Vehicle, formatPrice } from '@/lib/api';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -47,7 +47,7 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
 
           <div className="flex items-center justify-between mb-3">
             <span className="text-xl font-bold text-blue-600">
-              {vehicle.price ? `Rs ${vehicle.price}` : 'Price N/A'}
+              {formatPrice(vehicle.price)}
             </span>
             {vehicle.our_status && (
               <span className={`text-xs font-semibold px-2 py-1 rounded-full ${statusBg}`}>
