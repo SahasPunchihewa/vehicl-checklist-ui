@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://vehicl-checklist-api-142549112609.europe-west1.run.app/api';
 
 export interface Vehicle {
   id?: string;
