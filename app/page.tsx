@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Scraper from '@/components/Scraper';
 import VehicleList from '@/components/VehicleList';
 import StatusFilter from '@/components/StatusFilter';
+import SortBar from '@/components/SortBar';
 import RatingCriteriaManager from '@/components/RatingCriteriaManager';
 import { getVehicles, getStatuses, getVehiclesByStatus, Vehicle } from '@/lib/api';
 
@@ -12,6 +13,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [statuses, setStatuses] = useState<string[]>([]);
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [sortBy, setSortBy] = useState<'date' | 'rating-asc' | 'rating-desc'>('date');
   const [error, setError] = useState('');
 
   const loadVehiclesForStatus = async (status: string) => {
@@ -118,10 +120,16 @@ export default function Home() {
               </span>
             )}
           </div>
+          
+          {vehicles.length > 0 && !loading && (
+            <SortBar sortBy={sortBy} onSortChange={setSortBy} />
+          )}
+          
           <VehicleList
             vehicles={vehicles}
             loading={loading}
             empty={`No vehicles found${selectedStatus !== 'all' ? ' with this status' : ''}`}
+            sortBy={sortBy}
           />
         </div>
       </main>
