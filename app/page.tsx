@@ -12,15 +12,22 @@ export default function Home() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [statuses, setStatuses] = useState<string[]>([]);
-  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('available');
   const [sortBy, setSortBy] = useState<'date' | 'rating-asc' | 'rating-desc'>('date');
   const [error, setError] = useState('');
 
+  const hideRejectedUnlessSelected = (items: Vehicle[], status: string) => {
+    if (status === 'rejected') return items;
+    return items.filter((vehicle) => vehicle.our_status !== 'rejected');
+  };
+
   const loadVehiclesForStatus = async (status: string) => {
-    if (status === 'all') {
-      return getVehicles();
+    if (status === 'available') {
+      const allVehicles = await getVehicles();
+      return hideRejectedUnlessSelected(allVehicles, status);
     }
-    return getVehiclesByStatus(status);
+    const statusVehicles = await getVehiclesByStatus(status);
+    return hideRejectedUnlessSelected(statusVehicles, status);
   };
 
   useEffect(() => {
@@ -31,7 +38,7 @@ export default function Home() {
           getVehicles(),
           getStatuses(),
         ]);
-        setVehicles(vehiclesData);
+        setVehicles(hideRejectedUnlessSelected(vehiclesData, 'available'));
         setStatuses(statusesData);
         setError('');
       } catch (err) {
@@ -112,7 +119,7 @@ export default function Home() {
         <div>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 gap-3">
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
-              Vehicles {selectedStatus !== 'all' && `(${selectedStatus})`}
+              {selectedStatus === 'available' ? 'Available Vehicles' : `${selectedStatus.charAt(0).toUpperCase() + selectedStatus.slice(1)} Vehicles`}
             </h2>
             {vehicles.length > 0 && !loading && (
               <span className="text-sm text-text-secondary bg-border/30 px-3 py-1 rounded-full w-fit">
