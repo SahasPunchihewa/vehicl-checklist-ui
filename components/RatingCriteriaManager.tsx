@@ -215,36 +215,36 @@ export default function RatingCriteriaManager({ onUpdated }: RatingCriteriaManag
   };
 
   return (
-    <section className="mb-12 p-6 bg-card-bg border border-border rounded-xl">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Rating Criteria</h2>
-          <p className="text-sm text-text-secondary mt-1">
-            Pick a field, then define values like Interior Color = black gives 5/5.
+    <section className="mb-8 sm:mb-12 p-4 sm:p-6 bg-card-bg border border-border rounded-xl">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
+        <div className="min-w-0">
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Rating Criteria</h2>
+          <p className="text-xs sm:text-sm text-text-secondary mt-1">
+            Define values to auto-rate vehicles.
           </p>
         </div>
         <button
           type="button"
           onClick={handleAddRule}
-          className="px-3 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover"
+          className="px-3 py-2 text-xs sm:text-sm bg-primary text-white rounded-lg hover:bg-primary-hover active:scale-95 font-medium whitespace-nowrap min-h-[40px] sm:min-h-auto"
         >
           + Add Rule
         </button>
       </div>
 
-      {error && <div className="mb-4 p-3 rounded-lg bg-error/10 border border-error/30 text-red-300 text-sm">{error}</div>}
-      {success && <div className="mb-4 p-3 rounded-lg bg-success/10 border border-success/30 text-green-300 text-sm">{success}</div>}
+      {error && <div className="mb-4 p-3 rounded-lg bg-error/10 border border-error/30 text-red-300 text-xs sm:text-sm animate-pulse">{error}</div>}
+      {success && <div className="mb-4 p-3 rounded-lg bg-success/10 border border-success/30 text-green-300 text-xs sm:text-sm">{success}</div>}
 
       {loading ? (
-        <p className="text-text-secondary">Loading rating rules...</p>
+        <p className="text-text-secondary text-sm">Loading rating rules...</p>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           {rules.length === 0 && (
-            <p className="text-sm text-text-secondary">No rules yet. Add your first rating rule.</p>
+            <p className="text-xs sm:text-sm text-text-secondary">No rules yet. Add your first rating rule.</p>
           )}
 
           {rules.map((rule, index) => (
-            <div key={rule.id || index} className="grid grid-cols-1 lg:grid-cols-12 gap-2 bg-background border border-border rounded-lg p-3">
+            <div key={rule.id || index} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2 bg-background border border-border rounded-lg p-2 sm:p-3">
               {(() => {
                 const isConditionField = CONDITION_FIELDS.has(rule.field);
                 const isColorMapField = COLOR_MAP_FIELDS.has(rule.field);
@@ -253,7 +253,7 @@ export default function RatingCriteriaManager({ onUpdated }: RatingCriteriaManag
               <select
                 value={rule.field}
                 onChange={(e) => handleRuleChange(index, 'field', e.target.value)}
-                className="lg:col-span-3 px-3 py-2 bg-card-bg border border-border rounded text-sm text-foreground"
+                className="sm:col-span-1 lg:col-span-3 px-3 py-2 bg-card-bg border border-border rounded text-xs sm:text-sm text-foreground min-h-[40px] sm:min-h-auto"
               >
                 <option value="">Select field</option>
                 {RATING_FIELDS.map((field) => (
@@ -266,7 +266,7 @@ export default function RatingCriteriaManager({ onUpdated }: RatingCriteriaManag
                 value={rule.match_type}
                 onChange={(e) => handleRuleChange(index, 'match_type', e.target.value as 'equals' | 'contains' | 'scale_5' | 'value_map')}
                 disabled={isConditionField || isColorMapField}
-                className="lg:col-span-2 px-3 py-2 bg-card-bg border border-border rounded text-sm text-foreground"
+                className="sm:col-span-1 lg:col-span-2 px-3 py-2 bg-card-bg border border-border rounded text-xs sm:text-sm text-foreground min-h-[40px] sm:min-h-auto"
               >
                 <option value="equals">equals</option>
                 <option value="contains">contains</option>
@@ -371,12 +371,12 @@ export default function RatingCriteriaManager({ onUpdated }: RatingCriteriaManag
             </div>
           ))}
 
-          <div className="pt-2">
+          <div className="pt-3 sm:pt-4">
             <button
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover disabled:bg-border disabled:text-text-secondary"
+              className="px-4 py-2 bg-primary text-white text-xs sm:text-sm rounded-lg hover:bg-primary-hover disabled:bg-border disabled:text-text-secondary disabled:opacity-50 active:scale-95 font-medium min-h-[40px] sm:min-h-auto"
             >
               {saving ? 'Saving...' : 'Save Criteria'}
             </button>
