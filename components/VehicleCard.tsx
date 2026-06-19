@@ -45,6 +45,13 @@ export default function VehicleCard({ vehicle }: VehicleCardProps) {
         <div className="p-5">
           <h3 className="font-bold text-lg mb-3 line-clamp-2 text-foreground">{vehicle.title || 'Untitled'}</h3>
 
+          {vehicle.rating && vehicle.rating.rules_count > 0 && (
+            <div className="mb-3 inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/40 bg-primary/10 text-primary text-xs font-semibold">
+              <span>Rating</span>
+              <span>{vehicle.rating.score_5.toFixed(1)}/5</span>
+            </div>
+          )}
+
           <div className="flex items-center justify-between mb-4">
             <span className="text-2xl font-bold text-accent-blue">
               {formatPrice(vehicle.price)}

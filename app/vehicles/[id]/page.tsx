@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -16,11 +16,10 @@ export default function VehicleDetail() {
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState('');
   const [statuses, setStatuses] = useState<string[]>([]);
-  const [selectedStatus, setSelectedStatus] = useState('');
   const [copiedPhone, setCopiedPhone] = useState('');
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [viewerIndex, setViewerIndex] = useState(0);
-  const [editingField, setEditingField] = useState<null | 'interior_color' | 'notes'>(null);
+  const [editingField, setEditingField] = useState<null | 'interior_color' | 'car_color' | 'number_plate' | 'engine_condition' | 'gearbox_condition' | 'interior_condition' | 'notes'>(null);
   const [editValue, setEditValue] = useState('');
   const [newPhoneInput, setNewPhoneInput] = useState('');
   const [addingPhone, setAddingPhone] = useState(false);
@@ -34,7 +33,6 @@ export default function VehicleDetail() {
           getStatuses(),
         ]);
         setVehicle(vehicleData);
-        setSelectedStatus(vehicleData.our_status || '');
         setStatuses(statusesData);
         setError('');
       } catch (err) {
@@ -54,7 +52,6 @@ export default function VehicleDetail() {
     try {
       const updated = await updateVehicleStatus(vehicleId, newStatus);
       setVehicle(updated);
-      setSelectedStatus(updated.our_status || '');
       setError('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update status');
@@ -86,17 +83,26 @@ export default function VehicleDetail() {
     }
   };
 
-  const handleStartEdit = (field: 'interior_color' | 'notes') => {
+  const handleStartEdit = (field: 'interior_color' | 'car_color' | 'number_plate' | 'engine_condition' | 'gearbox_condition' | 'interior_condition' | 'notes') => {
     setEditValue(vehicle?.[field] ?? '');
     setEditingField(field);
   };
 
-  const handleSaveField = async (field: 'interior_color' | 'notes') => {
+  const handleSaveField = async (field: 'interior_color' | 'car_color' | 'number_plate' | 'engine_condition' | 'gearbox_condition' | 'interior_condition' | 'notes') => {
     if (!vehicle?.id) return;
+
+    const conditionFields = new Set(['engine_condition', 'gearbox_condition', 'interior_condition']);
+    const nextValue = conditionFields.has(field) ? editValue.trim() : editValue;
+    if (conditionFields.has(field) && nextValue && !['1', '2', '3', '4', '5'].includes(nextValue)) {
+      setError('Condition values must be between 1 and 5');
+      return;
+    }
+
     try {
-      const updated = await updateVehicle(vehicle.id, { [field]: editValue });
+      const updated = await updateVehicle(vehicle.id, { [field]: nextValue });
       setVehicle(updated);
       setEditingField(null);
+      setError('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save field');
     }
@@ -194,19 +200,19 @@ export default function VehicleDetail() {
     setIsViewerOpen(true);
   };
 
-  const closeViewer = () => {
+  const closeViewer = useCallback(() => {
     setIsViewerOpen(false);
-  };
+  }, []);
 
-  const goNext = () => {
+  const goNext = useCallback(() => {
     if (!filteredImages.length) return;
     setViewerIndex((prev) => (prev + 1) % filteredImages.length);
-  };
+  }, [filteredImages.length]);
 
-  const goPrev = () => {
+  const goPrev = useCallback(() => {
     if (!filteredImages.length) return;
     setViewerIndex((prev) => (prev - 1 + filteredImages.length) % filteredImages.length);
-  };
+  }, [filteredImages.length]);
 
   useEffect(() => {
     if (!isViewerOpen) return;
@@ -219,7 +225,7 @@ export default function VehicleDetail() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isViewerOpen, filteredImages.length]);
+  }, [isViewerOpen, goNext, goPrev, closeViewer]);
 
   if (loading) {
     return (
@@ -292,6 +298,11 @@ export default function VehicleDetail() {
                   <p className="text-2xl font-bold text-accent-blue">
                     {formatPrice(vehicle.price)}
                   </p>
+                  {vehicle.rating && vehicle.rating.rules_count > 0 && (
+                    <p className="mt-2 text-sm text-primary font-semibold">
+                      Rating: {vehicle.rating.score_5.toFixed(2)}/5 ({vehicle.rating.percentage.toFixed(1)}%)
+                    </p>
+                  )}
                 </div>
                 {vehicle.our_status && (
                   <span className={`text-sm font-semibold px-4 py-2 rounded-full border ${statusBg}`}>
@@ -435,6 +446,13 @@ export default function VehicleDetail() {
                   </div>
                 )}
 
+                {vehicle.mileage && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground mb-1">Mileage</h3>
+                    <p className="text-text-secondary">{vehicle.mileage}</p>
+                  </div>
+                )}
+
                 {vehicle.scraped_at && (
                   <div>
                     <h3 className="text-sm font-semibold text-foreground mb-1">Scraped Date</h3>
@@ -457,6 +475,28 @@ export default function VehicleDetail() {
                 )}
               </div>
             </div>
+
+            {/* Specifications */}
+            {vehicle.rating && vehicle.rating.rules_count > 0 && (
+              <div className="mb-8 p-4 bg-border/40 rounded-lg border border-border">
+                <h3 className="text-lg font-bold text-foreground mb-3">Rating Breakdown</h3>
+                <p className="text-sm text-text-secondary mb-3">
+                  Matched {vehicle.rating.matched_rules.length} of {vehicle.rating.rules_count} rules.
+                </p>
+                {vehicle.rating.matched_rules.length > 0 ? (
+                  <ul className="space-y-2">
+                    {vehicle.rating.matched_rules.map((rule) => (
+                      <li key={rule.id} className="text-sm text-text-secondary flex items-center justify-between gap-2">
+                        <span>{rule.label}</span>
+                        <span className="text-primary font-semibold">{rule.score}/{rule.max_score}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-text-secondary italic">No rule currently matches this vehicle.</p>
+                )}
+              </div>
+            )}
 
             {/* Specifications */}
             {vehicle.specs && vehicle.specs.length > 0 && (
@@ -582,6 +622,189 @@ export default function VehicleDetail() {
                   <span className="ml-2 text-sm text-text-secondary">
                     {vehicle.multifunction_steering ? 'Yes' : 'No'}
                   </span>
+                </div>
+
+                {/* Car Color */}
+                <div>
+                  <label className="block text-sm font-semibold text-foreground mb-2">Car Color</label>
+                  {editingField === 'car_color' ? (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        className="flex-1 px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder-text-secondary focus:ring-2 focus:ring-primary focus:border-transparent"
+                        placeholder="e.g. Red wine, White"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveField('car_color');
+                          if (e.key === 'Escape') setEditingField(null);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleSaveField('car_color')}
+                        className="px-3 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary-hover"
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingField(null)}
+                        className="px-3 py-2 bg-border text-text-secondary rounded-lg text-sm hover:bg-border/80"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-foreground text-sm">
+                        {vehicle.car_color || <span className="text-text-secondary italic">Not set</span>}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleStartEdit('car_color')}
+                        className="px-2 py-1 text-xs bg-border text-text-secondary rounded hover:bg-border/80"
+                      >
+                        {vehicle.car_color ? 'Edit' : '+ Add'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Number Plate */}
+                <div>
+                  <label className="block text-sm font-semibold text-foreground mb-2">Vehicle Number Plate</label>
+                  {editingField === 'number_plate' ? (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value.toUpperCase())}
+                        className="flex-1 px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder-text-secondary focus:ring-2 focus:ring-primary focus:border-transparent"
+                        placeholder="e.g. KM-1234"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveField('number_plate');
+                          if (e.key === 'Escape') setEditingField(null);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleSaveField('number_plate')}
+                        className="px-3 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary-hover"
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingField(null)}
+                        className="px-3 py-2 bg-border text-text-secondary rounded-lg text-sm hover:bg-border/80"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-foreground text-sm">
+                        {vehicle.number_plate || <span className="text-text-secondary italic">Not set</span>}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleStartEdit('number_plate')}
+                        className="px-2 py-1 text-xs bg-border text-text-secondary rounded hover:bg-border/80"
+                      >
+                        {vehicle.number_plate ? 'Edit' : '+ Add'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Engine Condition */}
+                <div>
+                  <label className="block text-sm font-semibold text-foreground mb-2">Engine Condition (1-5)</label>
+                  {editingField === 'engine_condition' ? (
+                    <div className="flex gap-2">
+                      <select
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        className="flex-1 px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
+                        autoFocus
+                      >
+                        <option value="">Select</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                      </select>
+                      <button type="button" onClick={() => handleSaveField('engine_condition')} className="px-3 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary-hover">Save</button>
+                      <button type="button" onClick={() => setEditingField(null)} className="px-3 py-2 bg-border text-text-secondary rounded-lg text-sm hover:bg-border/80">Cancel</button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-foreground text-sm">{vehicle.engine_condition || <span className="text-text-secondary italic">Not set</span>}</span>
+                      <button type="button" onClick={() => handleStartEdit('engine_condition')} className="px-2 py-1 text-xs bg-border text-text-secondary rounded hover:bg-border/80">{vehicle.engine_condition ? 'Edit' : '+ Add'}</button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Gearbox Condition */}
+                <div>
+                  <label className="block text-sm font-semibold text-foreground mb-2">Gearbox Condition (1-5)</label>
+                  {editingField === 'gearbox_condition' ? (
+                    <div className="flex gap-2">
+                      <select
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        className="flex-1 px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
+                        autoFocus
+                      >
+                        <option value="">Select</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                      </select>
+                      <button type="button" onClick={() => handleSaveField('gearbox_condition')} className="px-3 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary-hover">Save</button>
+                      <button type="button" onClick={() => setEditingField(null)} className="px-3 py-2 bg-border text-text-secondary rounded-lg text-sm hover:bg-border/80">Cancel</button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-foreground text-sm">{vehicle.gearbox_condition || <span className="text-text-secondary italic">Not set</span>}</span>
+                      <button type="button" onClick={() => handleStartEdit('gearbox_condition')} className="px-2 py-1 text-xs bg-border text-text-secondary rounded hover:bg-border/80">{vehicle.gearbox_condition ? 'Edit' : '+ Add'}</button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Interior Condition */}
+                <div>
+                  <label className="block text-sm font-semibold text-foreground mb-2">Interior Condition (1-5)</label>
+                  {editingField === 'interior_condition' ? (
+                    <div className="flex gap-2">
+                      <select
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        className="flex-1 px-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
+                        autoFocus
+                      >
+                        <option value="">Select</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                      </select>
+                      <button type="button" onClick={() => handleSaveField('interior_condition')} className="px-3 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary-hover">Save</button>
+                      <button type="button" onClick={() => setEditingField(null)} className="px-3 py-2 bg-border text-text-secondary rounded-lg text-sm hover:bg-border/80">Cancel</button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-foreground text-sm">{vehicle.interior_condition || <span className="text-text-secondary italic">Not set</span>}</span>
+                      <button type="button" onClick={() => handleStartEdit('interior_condition')} className="px-2 py-1 text-xs bg-border text-text-secondary rounded hover:bg-border/80">{vehicle.interior_condition ? 'Edit' : '+ Add'}</button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Notes */}

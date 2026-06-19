@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Scraper from '@/components/Scraper';
 import VehicleList from '@/components/VehicleList';
 import StatusFilter from '@/components/StatusFilter';
+import RatingCriteriaManager from '@/components/RatingCriteriaManager';
 import { getVehicles, getStatuses, getVehiclesByStatus, Vehicle } from '@/lib/api';
 
 export default function Home() {
@@ -12,6 +13,13 @@ export default function Home() {
   const [statuses, setStatuses] = useState<string[]>([]);
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [error, setError] = useState('');
+
+  const loadVehiclesForStatus = async (status: string) => {
+    if (status === 'all') {
+      return getVehicles();
+    }
+    return getVehiclesByStatus(status);
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -38,12 +46,7 @@ export default function Home() {
     setSelectedStatus(status);
     setLoading(true);
     try {
-      let filtered: Vehicle[];
-      if (status === 'all') {
-        filtered = await getVehicles();
-      } else {
-        filtered = await getVehiclesByStatus(status);
-      }
+      const filtered = await loadVehiclesForStatus(status);
       setVehicles(filtered);
       setError('');
     } catch (err) {
@@ -53,15 +56,25 @@ export default function Home() {
     }
   };
 
-  const handleScraperSuccess = async (vehicle: Vehicle) => {
+  const handleScraperSuccess = async () => {
     try {
-      const updated = await getVehicles();
+      const updated = await loadVehiclesForStatus(selectedStatus);
       setVehicles(updated);
-      if (selectedStatus !== 'all') {
-        setSelectedStatus('all');
-      }
     } catch (err) {
       console.error('Failed to refresh vehicles:', err);
+    }
+  };
+
+  const handleRatingConfigUpdated = async () => {
+    try {
+      setLoading(true);
+      const updated = await loadVehiclesForStatus(selectedStatus);
+      setVehicles(updated);
+      setError('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to refresh ratings');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -76,6 +89,8 @@ export default function Home() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Scraper onSuccess={handleScraperSuccess} />
+
+        <RatingCriteriaManager onUpdated={handleRatingConfigUpdated} />
 
         {error && (
           <div className="mb-8 p-4 bg-red-950 border border-red-700 text-red-200 rounded-lg">
