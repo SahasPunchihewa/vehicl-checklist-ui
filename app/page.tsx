@@ -121,9 +121,7 @@ export default function Home() {
             )}
           </div>
           
-          {vehicles.length > 0 && !loading && (
-            <SortBar sortBy={sortBy} onSortChange={setSortBy} />
-          )}
+          <SortBar sortBy={sortBy} onSortChange={setSortBy} disabled={vehicles.length === 0 || loading} />
           
           <VehicleList
             vehicles={vehicles}
