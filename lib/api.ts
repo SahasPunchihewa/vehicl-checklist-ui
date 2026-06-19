@@ -116,7 +116,7 @@ export async function getVehicle(id: string): Promise<Vehicle> {
   }
 
   const data = (await response.json()) as { vehicle?: Vehicle };
-  return data.vehicle;
+  return data.vehicle || {};
 }
 
 export async function updateVehicleStatus(
@@ -137,7 +137,7 @@ export async function updateVehicleStatus(
   }
 
   const data = (await response.json()) as { vehicle?: Vehicle };
-  return data.vehicle;
+  return data.vehicle || {};
 }
 
 export async function updateVehicleActiveStatus(
@@ -158,7 +158,7 @@ export async function updateVehicleActiveStatus(
   }
 
   const data = (await response.json()) as { vehicle?: Vehicle };
-  return data.vehicle;
+  return data.vehicle || {};
 }
 
 export async function updateVehicle(
@@ -179,7 +179,7 @@ export async function updateVehicle(
   }
 
   const data = (await response.json()) as { vehicle?: Vehicle };
-  return data.vehicle;
+  return data.vehicle || {};
 }
 
 export async function deleteVehicle(id: string): Promise<void> {
